@@ -4,6 +4,8 @@ import { writeFile } from "node:fs/promises";
 import type { ContextBase } from "../context.js";
 import { ZaloApiError } from "../Errors/ZaloApiError.js";
 import { logger, request } from "../utils.js";
+import { ZaloApiLoginQRAborted } from "../Errors/ZaloApiLoginQRAborted.js";
+import { ZaloApiLoginQRDeclined } from "../Errors/ZaloApiLoginQRDeclined.js";
 
 export enum LoginQRCallbackEventType {
     QRCodeGenerated,
@@ -23,6 +25,7 @@ export type LoginQRCallbackEvent =
                   enabledCheckOCR: boolean;
                   enabledMultiLayer: boolean;
               };
+              token: string;
           };
           actions: {
               saveToFile: (qrPath?: string) => Promise<unknown>;
@@ -166,6 +169,7 @@ async function generate(
             enabledCheckOCR: boolean;
             enabledMultiLayer: boolean;
         };
+        token: string;
     } | null;
     error_code: number;
     error_message: string;
@@ -488,13 +492,13 @@ export async function loginQR(
                         actions: {
                             retry,
                             abort() {
-                                reject(new ZaloApiError("Unable to login with QRCode", 1003));
+                                reject(new ZaloApiLoginQRAborted());
                             },
                         },
                     });
                 } else {
                     logger(ctx).error("QRCode login declined");
-                    reject(new ZaloApiError("Unable to login with QRCode", 1003));
+                    reject(new ZaloApiLoginQRDeclined());
                 }
 
                 return;
